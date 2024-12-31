@@ -1,0 +1,263 @@
+local OrionLib = loadstring(game:HttpGet(('https://raw.githubusercontent.com/shlexware/Orion/main/source')))()
+local Window = OrionLib:MakeWindow({Name = "SussyScrips PetGo Scripts 🐾🎮", HidePremium = false, SaveConfig = true, ConfigFolder = "Orion"})
+
+local Pets = require(game:GetService("ReplicatedStorage").Library.Items.PetItem).Directory
+local fromPet = "Cat"
+local toPet = "None"
+local selectedHugePet = "None"
+
+function ChangeVisual()
+    if toPet ~= "None" then
+        for i, v in pairs(Pets[toPet] or {}) do
+            Pets[fromPet][i] = v
+        end
+    end
+
+    if selectedHugePet ~= "None" then
+        for i, v in pairs(Pets[selectedHugePet] or {}) do
+            Pets[fromPet][i] = v
+        end
+    end
+    OrionLib:MakeNotification({
+        Name = "Pet Spawner 🐾",
+        Content = "Successfully Spawn Pet! ✨",
+        Image = "rbxassetid://4483345998",
+        Time = 5
+    })
+
+    AutoEquipCat()
+end
+
+function AutoEquipCat()
+    local equipLimit = 5
+    local equipCount = 0
+
+    while equipCount < equipLimit do
+        local args = {
+            [1] = "93fbe670e652405181d49799250ce392"
+        }
+        game:GetService("ReplicatedStorage"):WaitForChild("Network"):WaitForChild("Pets_Equip"):FireServer(unpack(args))
+        equipCount += 1
+        task.wait(0.9)
+    end
+    OrionLib:MakeNotification({
+        Name = "Auto Equip 🐾",
+        Content = "Successfully equipped the Cat pet 5 times! 🐱",
+        Image = "rbxassetid://4483345998",
+        Time = 5
+    })
+end
+
+local buying = false
+local fishingMerchantNumber = 1
+local standardMerchantNumber = 1
+local potionVendingMachine = false
+local buyLoop
+
+local function startAutoBuyMerchants()
+    buying = true
+    buyLoop = task.spawn(function()
+        while buying do
+            fishingMerchantNumber = fishingMerchantNumber + 1
+            if fishingMerchantNumber > 15 then
+                fishingMerchantNumber = 1
+            end
+
+            local fishingArgs = {
+                [1] = "FishingMerchant",
+                [2] = fishingMerchantNumber
+            }
+
+            pcall(function()
+                game:GetService("ReplicatedStorage"):WaitForChild("Network"):WaitForChild("CustomMerchants_Purchase"):InvokeServer(unpack(fishingArgs))
+            end)
+
+            standardMerchantNumber = standardMerchantNumber + 1
+            if standardMerchantNumber > 10 then
+                standardMerchantNumber = 1
+            end
+
+            local standardArgs = {
+                [1] = "StandardMerchant",
+                [2] = standardMerchantNumber
+            }
+
+            pcall(function()
+                game:GetService("ReplicatedStorage"):WaitForChild("Network"):WaitForChild("CustomMerchants_Purchase"):InvokeServer(unpack(standardArgs))
+            end)
+
+            if potionVendingMachine then
+                local potionArgs = {
+                    [1] = "PotionVendingMachine"
+                }
+
+                pcall(function()
+                    game:GetService("ReplicatedStorage"):WaitForChild("Network"):WaitForChild("VendingMachines_Purchase"):InvokeServer(unpack(potionArgs))
+                end)
+            end
+
+            task.wait(0.2)
+        end
+    end)
+    OrionLib:MakeNotification({
+        Name = "Auto Merchant Buy 🛒",
+        Content = "Successfully started Auto Merchant Buy! 💸",
+        Image = "rbxassetid://4483345998",
+        Time = 5
+    })
+end
+
+local function stopAutoBuyMerchants()
+    buying = false
+    if buyLoop then
+        task.cancel(buyLoop)
+        buyLoop = nil
+    end
+    OrionLib:MakeNotification({
+        Name = "Auto Merchant Buy 🛒",
+        Content = "Successfully stopped Auto Merchant Buy! ❌",
+        Image = "rbxassetid://4483345998",
+        Time = 5
+    })
+end
+
+local autoRolling = false
+local rollingLoop
+
+local function startAutoRoll()
+    autoRolling = true
+    rollingLoop = task.spawn(function()
+        while autoRolling do
+            pcall(function()
+                game:GetService("ReplicatedStorage"):WaitForChild("Network"):WaitForChild("Eggs_Roll"):InvokeServer()
+            end)
+            task.wait(0.5)
+        end
+    end)
+    OrionLib:MakeNotification({
+        Name = "Auto Roll 🎲",
+        Content = "Successfully started Auto Roll! 🎉",
+        Image = "rbxassetid://4483345998",
+        Time = 5
+    })
+end
+
+local function stopAutoRoll()
+    autoRolling = false
+    if rollingLoop then
+        task.cancel(rollingLoop)
+        rollingLoop = nil
+    end
+    OrionLib:MakeNotification({
+        Name = "Auto Roll 🎲",
+        Content = "Successfully stopped Auto Roll! ❌",
+        Image = "rbxassetid://4483345998",
+        Time = 5
+    })
+end
+
+local visualPetsTab = Window:MakeTab({
+    Name = "Pet Spawner 🐾",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+local petOptions = {"None"}
+for petName in pairs(Pets) do
+    table.insert(petOptions, petName)
+end
+
+visualPetsTab:AddDropdown({
+    Name = "Choose Visual Pet 🐱",
+    Default = "None",
+    Options = petOptions,
+    Callback = function(Value)
+        toPet = Value
+    end
+})
+
+local hugePetsOptions = {"None"}
+for petName in pairs(Pets) do
+    if string.match(petName, "^Huge") then
+        table.insert(hugePetsOptions, petName)
+    end
+end
+
+visualPetsTab:AddDropdown({
+    Name = "Choose Huge Pet 🐉",
+    Default = "None",
+    Options = hugePetsOptions,
+    Callback = function(Value)
+        selectedHugePet = Value
+    end
+})
+
+visualPetsTab:AddButton({
+    Name = "Spawn Pet 🐾",
+    Callback = ChangeVisual
+})
+
+local merchantTab = Window:MakeTab({
+    Name = "Auto Merchant Buy 🛒",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+merchantTab:AddToggle({
+    Name = "Start/Stop Auto Buy (Fishing & Standard Merchants) 💰",
+    Default = false,
+    Callback = function(value)
+        if value then
+            startAutoBuyMerchants()
+        else
+            stopAutoBuyMerchants()
+        end
+    end
+})
+
+merchantTab:AddToggle({
+    Name = "Enable Potion Vending Machine Auto Buy 🍹",
+    Default = false,
+    Callback = function(value)
+        potionVendingMachine = value
+    end
+})
+
+local autoRollTab = Window:MakeTab({
+    Name = "Auto Roll 🎲",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+autoRollTab:AddToggle({
+    Name = "Start/Stop Auto Roll 🎰",
+    Default = false,
+    Callback = function(value)
+        if value then
+            startAutoRoll()
+        else
+            stopAutoRoll()
+        end
+    end
+})
+
+local getScriptTab = Window:MakeTab({
+    Name = "Get Script 📜",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+getScriptTab:AddButton({
+    Name = "Copy Script Link 🔗",
+    Callback = function()
+        setclipboard("https://discord.gg/UjY5ew54")
+        OrionLib:MakeNotification({
+            Name = "Link Copied 📋",
+            Content = "Tobi server to get the script!",
+            Image = "rbxassetid://4483345998",
+            Time = 5
+        })
+    end
+})
+
+OrionLib:Init()
